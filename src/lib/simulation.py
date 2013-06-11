@@ -482,7 +482,7 @@ class SurveySimulation(Simulation):
                 setattr(self, key, val)
   
     def set_survey(self, filename = None, datesim = None, country = None, num_table = 1,
-                   subset=None, print_missing=True):
+                   subset=None, nb_chunk=1, print_missing=True):
         """
         Set survey input data
         """
@@ -503,6 +503,12 @@ class SurveySimulation(Simulation):
             self._num_table = num_table  
         
         self._subset = subset
+        
+        if subset is not None and nb_chunk != 1:
+            raise Exception("For now, you can't have chunk and subset at the same time")
+        else: 
+            #TODO: add a check nb_chunk is a positive integer
+            self.nb_chunk = nb_chunk
             
         if filename is None:
             if country is not None:
@@ -513,9 +519,8 @@ class SurveySimulation(Simulation):
                                
         self.survey = DataTable(self.InputTable, survey_data = filename, datesim = datesim,
                                  country = country , num_table = self._num_table, 
-                                 subset=subset, print_missing=print_missing)
-
-            
+                                 subset=subset, print_missing=print_missing, nb_chunk=nb_chunk)
+        
         self._build_dicts(option = 'input_only')
         
        

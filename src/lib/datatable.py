@@ -34,7 +34,7 @@ class DataTable(object):
     Construct a SystemSf object is a set of Prestation objects
     """
     def __init__(self, model_description, survey_data = None, scenario = None, datesim = None,
-                  country = None, num_table = 1, subset=None, print_missing=True):
+                  country = None, num_table = 1, subset=None, print_missing=True, nb_chunk=1):
         super(DataTable, self).__init__()
 
         # Init instance attribute
@@ -44,6 +44,8 @@ class DataTable(object):
         self.col_names = []
         self._num_table = num_table
         self._subset = subset
+        self._nb_chunk = nb_chunk
+            
         if num_table == 1:
             self.table = DataFrame()
             self.table3 = {'ind' : DataFrame(), 'foy' : DataFrame(), 'men' : DataFrame() }            
@@ -83,12 +85,10 @@ class DataTable(object):
         elif scenario is not None:
             self.scenario = scenario
             scenario.populate_datatable(self)
-#         else:
-#             raise Exception("survey_data or a scenario must be provided")
         
     def gen_index(self, entities):
         '''
-        Generates indexex for the relevant entities
+        Genrates indexex for the relevant entities
         '''
         
         self.index = {'ind': {0: {'idxIndi':np.arange(self._nrows), 
@@ -252,13 +252,27 @@ class DataTable(object):
                 if self._subset is not None: 
                     idx_subset = self.table['idmen'].isin(self._subset)
                     self.table = self.table[idx_subset ] 
-                      
+                    list_id_chunk = self.table['idmen']
+   
             elif self._num_table == 3 : 
                 for entity in self.list_entities:
                     self.table3[entity] = store[str(base_name)+'/'+ entity]
                     if self._subset is not None: 
                         idx_subset = self.table3[entity]['idmen'].isin(self._subset)
                         self.table3[entity] = self.table3[entity][idx_subset] 
+                        if entity == 'men':
+                            list_id_chunk = self.table3[entity]['idmen']
+                                                
+            if self._nb_chunk > 1:
+                pdb.set_trace()
+                size = len(list_id_chunk)
+                size = int(size/self._nb_chunk)                        
+                def chunks(l, n):
+
+                for i in xrange(0, len(l), self._nb_chunk):
+                    yield l[i:i+n]
+                        
+                        
             store.close()
             
         missing_col = []
@@ -580,17 +594,6 @@ class DataTable(object):
     def set_value(self, varname, value, entity = None, opt = None):
         '''
         Sets the value of varname using index and opt
-        
-        Parameters
-        ----------
-        varname: string,
-                  variable to set
-        value: TODO: fill 
-                  value assigned to varname
-        entity: string, default None and if None entity is set to "ind"
-                the specified entity 
-        opt: int
-             position in the netity
         '''
         if entity is None:
             entity = "ind"
